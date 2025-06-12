@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+<body>
+<h2>Geräteübersicht</h2>
+<p>Angemeldet als: {{ user }}</p>
+
+<ul>
+    {% for geraet in geraete %}
+    <li>
+        <a href="{{ url_for('geraet_detail', geraet_id=geraet.id) }}">{{ geraet.name }}</a>
+        – {{ geraet.beschreibung }}
+    </li>
+    {% endfor %}
+</ul>
+
+{% if user == 'Admin' %}
+<p><a href="{{ url_for('geraet_erstellen') }}">+ Neues Gerät hinzufügen</a></p>
+{% endif %}
+
+<a href="{{ url_for('logout') }}">Logout</a>
+</body>
+</html>

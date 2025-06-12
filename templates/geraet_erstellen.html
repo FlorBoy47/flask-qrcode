@@ -1,0 +1,17 @@
+<!doctype html>
+<html>
+<body>
+<h2>Neues Gerät anlegen</h2>
+<form method="POST">
+    Gerätename: <input type="text" name="name"><br>
+    Beschreibung: <br>
+    <textarea name="beschreibung" rows="4" cols="50"></textarea><br>
+    <button type="submit">Erstellen</button>
+</form>
+
+<br>
+<a href="{{ url_for('geraete_liste') }}">Zurück zur Übersicht</a>
+<br>
+<a href="{{ url_for('logout') }}">Logout</a>
+</body>
+</html>
