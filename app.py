@@ -59,7 +59,12 @@ def logout():
 @login_required
 def geraete_liste():
     geraete = Geraet.query.all()
-    return render_template('geraete.html', geraete=geraete, user=session['username'])
+
+    # Alle Notizen holen und in ein Dictionary packen (geraet_id → Notiz)
+    alle_notizen = Notiz.query.all()
+    notizen_dict = {n.geraet_id: n for n in alle_notizen}
+
+    return render_template('geraete.html', geraete=geraete, user=session['username'], notizen=notizen_dict)
 
 @app.route('/geraet/<int:geraet_id>', methods=['GET', 'POST'])
 @login_required

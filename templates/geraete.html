@@ -1,12 +1,22 @@
 <!doctype html>
 <html>
+<head>
+    <style>
+        .problem {
+            background-color: #ffcccc;
+            padding: 5px;
+        }
+    </style>
+</head>
 <body>
 <h2>Geräteübersicht</h2>
 <p>Angemeldet als: {{ user }}</p>
 
 <ul>
     {% for geraet in geraete %}
-    <li>
+    {# Notiz dieses Geräts für Problemprüfung holen #}
+    {% set notiz = notizen.get(geraet.id) %}
+    <li class="{% if user == 'Admin' and notiz and notiz.probleme %}problem{% endif %}">
         <a href="{{ url_for('geraet_detail', geraet_id=geraet.id) }}">{{ geraet.name }}</a>
         – {{ geraet.beschreibung }}
     </li>
