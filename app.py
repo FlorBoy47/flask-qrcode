@@ -112,11 +112,11 @@ def geraet_erstellen():
 # ⚠️ Automatisch: alte Datenbank löschen und neu anlegen
 with app.app_context():
     db_path = "datenbank.db"
-    if os.path.exists(db_path):
-        os.remove(db_path)
-        print("🧨 Alte Datenbank gelöscht.")
+with app.app_context():
+    db.drop_all()
+    print("🗑️  Tabellen gelöscht.")
     db.create_all()
-    print("✅ Neue Datenbank erstellt.")
+    print("✅ Tabellen neu erstellt.")
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
