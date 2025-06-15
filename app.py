@@ -1,10 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from functools import wraps
-from models import db, Geraet, Notiz
+from models import db, Geraet, Notiz, AdminNotiz
 import os
 
 app = Flask(__name__)
-app.secret_key = 'geheimer_schlüssel'
+app.secret_key = 'geheimer_schluessel'
 
 # DB-Konfiguration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///datenbank.db'
@@ -69,38 +69,51 @@ def geraet_detail(geraet_id):
     user = session['username']
     geraet = Geraet.query.get_or_404(geraet_id)
     notiz = Notiz.query.filter_by(user=user, geraet_id=geraet.id).first()
+    admin_notiz = AdminNotiz.query.filter_by(geraet_id=geraet.id).first()
 
     if request.method == 'POST':
-        kunde = request.form.get('kunde')
-        probleme = bool(request.form.get('probleme'))
-        problembeschreibung = request.form.get('problembeschreibung')
-        info_user = request.form.get('info_user')
+        if user == "Admin" and "admin_speichern" in request.form:
+            if not admin_notiz:
+                admin_notiz = AdminNotiz(geraet_id=geraet.id)
+                db.session.add(admin_notiz)
 
-        if notiz:
-            notiz.kunde = kunde
-            notiz.probleme = probleme
-            notiz.problembeschreibung = problembeschreibung
-            notiz.info_user = info_user
-        else:
-            notiz = Notiz(
-                user=user,
-                geraet_id=geraet.id,
-                kunde=kunde,
-                probleme=probleme,
-                problembeschreibung=problembeschreibung,
-                info_user=info_user
-            )
-            db.session.add(notiz)
+            admin_notiz.geliefert_am = request.form.get("geliefert_am")
+            admin_notiz.info_problem_admin = request.form.get("info_problem_admin")
+            admin_notiz.info_admin = request.form.get("info_admin")
+            db.session.commit()
+            flash("Admin-Daten gespeichert", "success")
 
-        db.session.commit()
+        elif user != "Admin" and "user_speichern" in request.form:
+            kunde = request.form.get('kunde')
+            probleme = bool(request.form.get('probleme'))
+            problembeschreibung = request.form.get('problembeschreibung')
+            info_user = request.form.get('info_user')
+
+            if notiz:
+                notiz.kunde = kunde
+                notiz.probleme = probleme
+                notiz.problembeschreibung = problembeschreibung
+                notiz.info_user = info_user
+            else:
+                notiz = Notiz(
+                    user=user,
+                    geraet_id=geraet.id,
+                    kunde=kunde,
+                    probleme=probleme,
+                    problembeschreibung=problembeschreibung,
+                    info_user=info_user
+                )
+                db.session.add(notiz)
+            db.session.commit()
+
         return redirect(url_for('geraet_detail', geraet_id=geraet.id))
 
-    return render_template('geraet_detail.html', geraet=geraet, notiz=notiz, user=user)
+    return render_template("geraet_detail.html", geraet=geraet, notiz=notiz, admin_notiz=admin_notiz, user=user)
 
 @app.route('/geraet/neu', methods=['GET', 'POST'])
 @admin_required
 def geraet_erstellen():
-    if request.method == 'POST':
+    if request.method == "POST":
         name = request.form['name']
         beschreibung = request.form['beschreibung']
         neues_geraet = Geraet(name=name, beschreibung=beschreibung)
@@ -109,9 +122,7 @@ def geraet_erstellen():
         return redirect(url_for('geraete_liste'))
     return render_template('geraet_erstellen.html')
 
-# ⚠️ Automatisch: alte Datenbank löschen und neu anlegen
-with app.app_context():
-    db_path = "datenbank.db"
+# Datenbank beim Start initialisieren (ohne persistente Daten!)
 with app.app_context():
     db.drop_all()
     print("🗑️  Tabellen gelöscht.")
