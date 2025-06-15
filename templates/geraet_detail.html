@@ -1,8 +1,6 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Gerätedetails</title>
   <script>
     function toggleProblemfeld() {
       const checkbox = document.getElementById("probleme");
@@ -17,40 +15,46 @@
 
 {% if user == "Admin" %}
 <h3>Benutzereinträge:</h3>
-<p><strong>Kunde:</strong> {{ notiz.kunde or "-" }}</p>
-<p><strong>Problem gemeldet:</strong> {{ "Ja" if notiz and notiz.probleme else "Nein" }}</p>
-{% if notiz and notiz.probleme %}
-<p><strong>Problembeschreibung:</strong> {{ notiz.problembeschreibung }}</p>
+{% if benutzer_notizen %}
+{% for notiz in benutzer_notizen %}
+<div style="margin-bottom: 1em; padding: 0.5em; border: 1px solid #ccc;">
+  <p><strong>Benutzer:</strong> {{ notiz.user }}</p>
+  <p><strong>Kunde:</strong> {{ notiz.kunde or "-" }}</p>
+  <p><strong>Problem gemeldet:</strong> {{ "Ja" if notiz.probleme else "Nein" }}</p>
+  {% if notiz.probleme %}
+  <p><strong>Problembeschreibung:</strong> {{ notiz.problembeschreibung }}</p>
+  {% endif %}
+  <p><strong>Sonstige Informationen:</strong> {{ notiz.info_user or "-" }}</p>
+</div>
+{% endfor %}
+{% else %}
+<p>Keine Benutzereinträge vorhanden.</p>
 {% endif %}
-<p><strong>Sonstige Informationen:</strong> {{ notiz.info_user or "-" }}</p>
 
 <hr>
 <h3>Admin-Felder bearbeiten:</h3>
 <form method="POST">
   <input type="hidden" name="admin_speichern" value="1">
   Geliefert am: <input type="text" name="geliefert_am" value="{{ admin_notiz.geliefert_am or '' }}"><br>
-  Infos zu Problemen:<br>
-  <textarea name="info_problem_admin">{{ admin_notiz.info_problem_admin or '' }}</textarea><br>
-  Sonstige Informationen:<br>
-  <textarea name="info_admin">{{ admin_notiz.info_admin or '' }}</textarea><br>
+  Infos zu Problemen: <br><textarea name="info_problem_admin">{{ admin_notiz.info_problem_admin or '' }}</textarea><br>
+  Sonstige Informationen: <br><textarea name="info_admin">{{ admin_notiz.info_admin or '' }}</textarea><br>
   <button type="submit">Speichern</button>
 </form>
-
 {% else %}
 <form method="POST">
   <input type="hidden" name="user_speichern" value="1">
-  Kunde: <input type="text" name="kunde" value="{{ notiz.kunde if notiz else '' }}"><br>
+  Kunde: <input type="text" name="kunde" value="{{ notiz.kunde or '' }}"><br>
 
-  <input type="checkbox" id="probleme" name="probleme" value="1" {% if notiz and notiz.probleme %}checked{% endif %} onclick="toggleProblemfeld()">
+  <input type="checkbox" id="probleme" name="probleme" value="1" {% if notiz.probleme %}checked{% endif %} onclick="toggleProblemfeld()">
   <label for="probleme">Problem vorhanden</label><br>
 
-  <div id="problem_beschreibung_feld" style="display: {% if notiz and notiz.probleme %}block{% else %}none{% endif %};">
+  <div id="problem_beschreibung_feld" style="display: {% if notiz.probleme %}block{% else %}none{% endif %};">
     Problembeschreibung:<br>
-    <textarea name="problembeschreibung">{{ notiz.problembeschreibung if notiz else '' }}</textarea><br>
+    <textarea name="problembeschreibung">{{ notiz.problembeschreibung or '' }}</textarea><br>
   </div>
 
   Sonstige Informationen:<br>
-  <textarea name="info_user">{{ notiz.info_user if notiz else '' }}</textarea><br>
+  <textarea name="info_user">{{ notiz.info_user or '' }}</textarea><br>
 
   <button type="submit">Speichern</button>
 </form>
