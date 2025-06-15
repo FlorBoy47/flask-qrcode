@@ -59,11 +59,8 @@ def logout():
 @login_required
 def geraete_liste():
     geraete = Geraet.query.all()
-
-    # Alle Notizen holen und in ein Dictionary packen (geraet_id → Notiz)
     alle_notizen = Notiz.query.all()
     notizen_dict = {n.geraet_id: n for n in alle_notizen}
-
     return render_template('geraete.html', geraete=geraete, user=session['username'], notizen=notizen_dict)
 
 @app.route('/geraet/<int:geraet_id>', methods=['GET', 'POST'])
@@ -71,20 +68,34 @@ def geraete_liste():
 def geraet_detail(geraet_id):
     user = session['username']
     geraet = Geraet.query.get_or_404(geraet_id)
-
     notiz = Notiz.query.filter_by(user=user, geraet_id=geraet.id).first()
+
     if request.method == 'POST':
-        text = request.form.get('notiz')
+        kunde = request.form.get('kunde')
+        probleme = bool(request.form.get('probleme'))
+        problembeschreibung = request.form.get('problembeschreibung')
+        info_user = request.form.get('info_user')
+
         if notiz:
-            notiz.text = text
+            notiz.kunde = kunde
+            notiz.probleme = probleme
+            notiz.problembeschreibung = problembeschreibung
+            notiz.info_user = info_user
         else:
-            notiz = Notiz(user=user, geraet_id=geraet.id, text=text)
+            notiz = Notiz(
+                user=user,
+                geraet_id=geraet.id,
+                kunde=kunde,
+                probleme=probleme,
+                problembeschreibung=problembeschreibung,
+                info_user=info_user
+            )
             db.session.add(notiz)
+
         db.session.commit()
         return redirect(url_for('geraet_detail', geraet_id=geraet.id))
 
-    gespeicherte_notiz = notiz.text if notiz else ""
-    return render_template('geraet_detail.html', geraet=geraet, notiz=gespeicherte_notiz, user=user)
+    return render_template('geraet_detail.html', geraet=geraet, notiz=notiz, user=user)
 
 @app.route('/geraet/neu', methods=['GET', 'POST'])
 @admin_required
@@ -98,9 +109,10 @@ def geraet_erstellen():
         return redirect(url_for('geraete_liste'))
     return render_template('geraet_erstellen.html')
 
-# Datenbank erstellen beim ersten Start
+# Automatisch Datenbank anlegen bei App-Start (auch auf Render)
 with app.app_context():
     db.create_all()
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
