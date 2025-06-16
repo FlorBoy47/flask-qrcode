@@ -1,12 +1,12 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from functools import wraps
-from models import db, Geraet, Notiz
+from models import db, Geraet, Notiz, AdminNotiz
 import os
 
 app = Flask(__name__)
 app.secret_key = 'geheimer_schlüssel'
 
-# DB-Konfiguration
+# Datenbank-Konfiguration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///datenbank.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
@@ -26,7 +26,6 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# Nur Admin
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -37,20 +36,20 @@ def admin_required(f):
 
 @app.route('/')
 def home():
-    if 'username' in session:
-        return redirect(url_for('geraete_liste'))
-    return redirect(url_for('login'))
+    return redirect(url_for('geraete_liste'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    fehler = None
     if request.method == 'POST':
         name = request.form['username']
         pwd = request.form['password']
         if name in users and users[name] == pwd:
             session['username'] = name
             return redirect(url_for('geraete_liste'))
-        return 'Falsche Zugangsdaten!'
-    return render_template('login.html')
+        else:
+            fehler = "Falsche Zugangsdaten!"
+    return render_template('login.html', fehler=fehler)
 
 @app.route('/logout')
 def logout():
@@ -71,67 +70,83 @@ def geraet_detail(geraet_id):
     user = session['username']
     geraet = Geraet.query.get_or_404(geraet_id)
     notiz = Notiz.query.filter_by(user='Acaris', geraet_id=geraet.id).first()
+    admin_notiz = AdminNotiz.query.filter_by(geraet_id=geraet.id).first()
 
     if request.method == 'POST':
-        if user == 'Acaris' and 'user_speichern' in request.form:
+        if user == 'Admin' and 'admin_speichern' in request.form:
+            if not admin_notiz:
+                admin_notiz = AdminNotiz(geraet_id=geraet.id)
+                db.session.add(admin_notiz)
+
+            admin_notiz.geliefert_am = request.form.get("geliefert_am")
+            admin_notiz.info_problem_admin = request.form.get("info_problem_admin")
+            admin_notiz.info_admin = request.form.get("info_admin")
+
             if notiz:
-                notiz.kunde = request.form.get('kunde')
-                notiz.probleme = bool(request.form.get('probleme'))
-                notiz.problembeschreibung = request.form.get('problembeschreibung')
-                notiz.info_user = request.form.get('info_user')
+                notiz.problem_behoben = 'problem_behoben' in request.form
+                notiz.problem_loesung = request.form.get("problem_loesung")
+
+            db.session.commit()
+            flash("Änderungen gespeichert", "success")
+            return redirect(url_for('geraet_detail', geraet_id=geraet.id))
+
+        elif user != 'Admin' and 'user_speichern' in request.form:
+            kunde = request.form.get('kunde')
+            probleme = bool(request.form.get('probleme'))
+            problembeschreibung = request.form.get('problembeschreibung')
+            info_user = request.form.get('info_user')
+
+            if notiz:
+                notiz.kunde = kunde
+                notiz.probleme = probleme
+                notiz.problembeschreibung = problembeschreibung
+                notiz.info_user = info_user
+                notiz.problem_behoben = False
+                notiz.problem_loesung = None
             else:
                 notiz = Notiz(
-                    user='Acaris',
+                    user=user,
                     geraet_id=geraet.id,
-                    kunde=request.form.get('kunde'),
-                    probleme=bool(request.form.get('probleme')),
-                    problembeschreibung=request.form.get('problembeschreibung'),
-                    info_user=request.form.get('info_user')
+                    kunde=kunde,
+                    probleme=probleme,
+                    problembeschreibung=problembeschreibung,
+                    info_user=info_user,
+                    problem_behoben=False,
+                    problem_loesung=None
                 )
                 db.session.add(notiz)
+
             db.session.commit()
-            flash("Eintrag gespeichert", "success")
             return redirect(url_for('geraet_detail', geraet_id=geraet.id))
 
-        if user == 'Admin' and 'admin_speichern' in request.form:
-            if notiz:
-                notiz.problem_behoben = bool(request.form.get('problem_behoben'))
-                notiz.problem_geloest_info = request.form.get('problem_geloest_info')
-                db.session.commit()
-                flash("Problemstatus aktualisiert", "success")
-            return redirect(url_for('geraet_detail', geraet_id=geraet.id))
-
-    return render_template('geraet_detail.html', geraet=geraet, notiz=notiz, user=user)
+    return render_template("geraet_detail.html", geraet=geraet, notiz=notiz, admin_notiz=admin_notiz, user=user)
 
 @app.route('/geraet/neu', methods=['GET', 'POST'])
 @admin_required
 def geraet_erstellen():
-    if request.method == 'POST':
-        name = request.form.get('name')
-        beschreibung = request.form.get('beschreibung')
-        if name:
-            neues_geraet = Geraet(name=name, beschreibung=beschreibung)
-            db.session.add(neues_geraet)
-            db.session.commit()
-            return redirect(url_for('geraete_liste'))
-    return render_template('geraet_erstellen.html')
+    if request.method == "POST":
+        name = request.form["name"]
+        beschreibung = request.form["beschreibung"]
+        neues_geraet = Geraet(name=name, beschreibung=beschreibung)
+        db.session.add(neues_geraet)
+        db.session.commit()
+        return redirect(url_for("geraete_liste"))
+    return render_template("geraet_erstellen.html")
 
 @app.route('/geraet/<int:geraet_id>/loeschen', methods=['POST'])
 @admin_required
 def geraet_loeschen(geraet_id):
     geraet = Geraet.query.get_or_404(geraet_id)
-    notizen = Notiz.query.filter_by(geraet_id=geraet.id).all()
-    for n in notizen:
-        db.session.delete(n)
+    Notiz.query.filter_by(geraet_id=geraet.id).delete()
+    AdminNotiz.query.filter_by(geraet_id=geraet.id).delete()
     db.session.delete(geraet)
     db.session.commit()
-    flash("Gerät gelöscht", "info")
     return redirect(url_for('geraete_liste'))
 
-# Datenbank bei App-Start initialisieren
+# 🛠 Automatisch Datenbank erstellen (nur lokal sinnvoll!)
 with app.app_context():
     db.create_all()
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port, debug=True)
