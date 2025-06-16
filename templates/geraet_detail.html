@@ -23,6 +23,21 @@
   <p><strong>Problem gemeldet:</strong> {{ "Ja" if notiz.probleme else "Nein" }}</p>
   {% if notiz.probleme %}
   <p><strong>Problembeschreibung:</strong> {{ notiz.problembeschreibung }}</p>
+  <form method="POST">
+    <input type="hidden" name="admin_problem_bearbeiten" value="1">
+    <input type="hidden" name="notiz_id" value="{{ notiz.id }}">
+    <label>
+      <input type="checkbox" name="problem_behoben" value="1" {% if notiz.problem_behoben %}checked{% endif %}>
+      Problem behoben
+    </label><br>
+    Kommentar zur Behebung:<br>
+    <textarea name="kommentar_admin">{{ notiz.kommentar_admin or '' }}</textarea><br>
+    <button type="submit">Speichern</button>
+  </form>
+  {% if notiz.problem_behoben %}
+  <p><strong>Status:</strong> Problem wurde als behoben markiert.</p>
+  <p><strong>Admin-Kommentar:</strong> {{ notiz.kommentar_admin or "-" }}</p>
+  {% endif %}
   {% endif %}
   <p><strong>Sonstige Informationen:</strong> {{ notiz.info_user or "-" }}</p>
 </div>

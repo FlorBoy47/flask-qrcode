@@ -9,6 +9,7 @@ app.secret_key = 'geheimer_schlüssel'
 # DB-Konfiguration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///datenbank.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 db.init_app(app)
 
 # Benutzerliste
@@ -26,6 +27,7 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# Nur Admin
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -59,33 +61,19 @@ def logout():
 def geraete_liste():
     geraete = Geraet.query.all()
     alle_notizen = Notiz.query.all()
-    problem_ids = [n.geraet_id for n in alle_notizen if n.probleme]
-    notizen_dict = {n.geraet_id: n for n in alle_notizen if n.user == session['username']}
-    return render_template('geraete.html', geraete=geraete, user=session['username'], notizen=notizen_dict, problem_ids=problem_ids)
-
-@app.route('/geraet/neu', methods=['GET', 'POST'])
-@admin_required
-def geraet_erstellen():
-    if request.method == "POST":
-        name = request.form.get("name")
-        beschreibung = request.form.get("beschreibung")
-        neues_geraet = Geraet(name=name, beschreibung=beschreibung)
-        db.session.add(neues_geraet)
-        db.session.commit()
-        return redirect(url_for("geraete_liste"))
-    return render_template("geraet_erstellen.html")
+    notizen_dict = {n.geraet_id: n for n in alle_notizen}
+    return render_template('geraete.html', geraete=geraete, user=session['username'], notizen=notizen_dict)
 
 @app.route('/geraet/<int:geraet_id>', methods=['GET', 'POST'])
 @login_required
 def geraet_detail(geraet_id):
     user = session['username']
     geraet = Geraet.query.get_or_404(geraet_id)
+    notiz = Notiz.query.filter_by(user='Acaris', geraet_id=geraet.id).first()
+    admin_notiz = AdminNotiz.query.filter_by(geraet_id=geraet.id).first()
 
-    if user == "Admin":
-        admin_notiz = AdminNotiz.query.filter_by(geraet_id=geraet.id).first()
-        benutzer_notizen = Notiz.query.filter_by(geraet_id=geraet.id).all()
-
-        if request.method == "POST" and "admin_speichern" in request.form:
+    if request.method == 'POST':
+        if user == "Admin" and request.form.get("admin_speichern"):
             if not admin_notiz:
                 admin_notiz = AdminNotiz(geraet_id=geraet.id)
                 db.session.add(admin_notiz)
@@ -93,16 +81,15 @@ def geraet_detail(geraet_id):
             admin_notiz.geliefert_am = request.form.get("geliefert_am")
             admin_notiz.info_problem_admin = request.form.get("info_problem_admin")
             admin_notiz.info_admin = request.form.get("info_admin")
+
+            if notiz:
+                notiz.problem_behoben = bool(request.form.get("problem_behoben"))
+                notiz.kommentar_admin = request.form.get("kommentar_admin")
+
             db.session.commit()
             flash("Admin-Daten gespeichert", "success")
-            return redirect(url_for("geraet_detail", geraet_id=geraet.id))
 
-        return render_template("geraet_detail.html", geraet=geraet, admin_notiz=admin_notiz, benutzer_notizen=benutzer_notizen, user=user)
-
-    else:
-        notiz = Notiz.query.filter_by(user=user, geraet_id=geraet.id).first()
-
-        if request.method == 'POST' and "user_speichern" in request.form:
+        elif user == "Acaris" and request.form.get("user_speichern"):
             kunde = request.form.get('kunde')
             probleme = bool(request.form.get('probleme'))
             problembeschreibung = request.form.get('problembeschreibung')
@@ -114,35 +101,53 @@ def geraet_detail(geraet_id):
                 notiz.problembeschreibung = problembeschreibung
                 notiz.info_user = info_user
             else:
-                notiz = Notiz(user=user, geraet_id=geraet.id, kunde=kunde, probleme=probleme,
-                              problembeschreibung=problembeschreibung, info_user=info_user)
+                notiz = Notiz(
+                    user=user,
+                    geraet_id=geraet.id,
+                    kunde=kunde,
+                    probleme=probleme,
+                    problembeschreibung=problembeschreibung,
+                    info_user=info_user
+                )
                 db.session.add(notiz)
 
             db.session.commit()
-            return redirect(url_for('geraet_detail', geraet_id=geraet.id))
 
-        return render_template("geraet_detail.html", geraet=geraet, notiz=notiz, user=user)
+        return redirect(url_for('geraet_detail', geraet_id=geraet.id))
+
+    return render_template('geraet_detail.html', geraet=geraet, notiz=notiz, user=user, admin_notiz=admin_notiz)
+
+@app.route('/geraet/neu', methods=['GET', 'POST'])
+@admin_required
+def geraet_erstellen():
+    if request.method == 'POST':
+        name = request.form['name']
+        beschreibung = request.form['beschreibung']
+        neues_geraet = Geraet(name=name, beschreibung=beschreibung)
+        db.session.add(neues_geraet)
+        db.session.commit()
+        return redirect(url_for('geraete_liste'))
+    return render_template('geraet_erstellen.html')
 
 @app.route('/geraet/<int:geraet_id>/loeschen', methods=['POST'])
 @admin_required
 def geraet_loeschen(geraet_id):
     geraet = Geraet.query.get_or_404(geraet_id)
-    AdminNotiz.query.filter_by(geraet_id=geraet.id).delete()
-    Notiz.query.filter_by(geraet_id=geraet.id).delete()
+    Notiz.query.filter_by(geraet_id=geraet_id).delete()
+    AdminNotiz.query.filter_by(geraet_id=geraet_id).delete()
     db.session.delete(geraet)
     db.session.commit()
-    flash("Gerät wurde gelöscht", "info")
+    flash("Gerät gelöscht", "info")
     return redirect(url_for('geraete_liste'))
 
-# Initialer DB-Reset bei jedem Start (für Entwicklung)
+# ⚠️ Automatisch: alte Datenbank löschen und neu anlegen
 with app.app_context():
     db_path = "datenbank.db"
-    if os.path.exists(db_path):
-        os.remove(db_path)
-        print("🗑️  Alte Datenbank gelöscht.")
+    db.drop_all()
+    print("🗑️  Tabellen gelöscht.")
     db.create_all()
-    print("✅ Neue Tabellen erstellt.")
+    print("✅ Tabellen neu erstellt.")
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port, debug=True)
