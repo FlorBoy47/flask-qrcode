@@ -1,18 +1,66 @@
-<!-- templates/layout.html -->
 <!doctype html>
 <html lang="de">
 <head>
   <meta charset="UTF-8">
   <title>Geräteverwaltung</title>
   <style>
-    body { font-family: sans-serif; margin: 20px; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 8px; border: 1px solid #ccc; }
-    th { background-color: #f2f2f2; }
-    tr:nth-child(even) { background-color: #f9f9f9; }
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0 20px;
+    }
+    .topbar {
+      background-color: #f2f2f2;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #ccc;
+    }
+    .topbar .info {
+      font-size: 14px;
+    }
+    a {
+      text-decoration: none;
+      color: #0077cc;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .content {
+      padding: 20px 0;
+    }
+    .flash {
+      background-color: #e0ffe0;
+      border: 1px solid #00cc00;
+      padding: 10px;
+      margin: 10px 0;
+    }
   </style>
 </head>
 <body>
-{% block content %}{% endblock %}
+
+<div class="topbar">
+  <div><strong>Geräteverwaltung</strong></div>
+  {% if session['username'] %}
+  <div class="info">
+    Eingeloggt als: <strong>{{ session['username'] }}</strong> |
+    <a href="{{ url_for('logout') }}">Logout</a>
+  </div>
+  {% endif %}
+</div>
+
+<div class="content">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  {% for category, message in messages %}
+  <div class="flash">{{ message }}</div>
+  {% endfor %}
+  {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</div>
+
 </body>
 </html>

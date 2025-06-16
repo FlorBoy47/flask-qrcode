@@ -1,11 +1,20 @@
-<!doctype html>
-<html>
-<body>
+{% extends "layout.html" %}
+{% block content %}
+
 <h2>Login</h2>
-<form method="POST">
-    Benutzername: <input type="text" name="username"><br>
-    Passwort: <input type="password" name="password"><br>
-    <button type="submit">Login</button>
+
+<form method="POST" style="max-width: 300px;">
+    <label for="username">Benutzername:</label><br>
+    <input type="text" id="username" name="username" required><br><br>
+
+    <label for="password">Passwort:</label><br>
+    <input type="password" id="password" name="password" required><br><br>
+
+    <button type="submit">Anmelden</button>
 </form>
-</body>
-</html>
+
+{% if fehler %}
+<p style="color: red;">{{ fehler }}</p>
+{% endif %}
+
+{% endblock %}
