@@ -140,7 +140,7 @@ def geraet_loeschen(geraet_id):
     flash("Gerät gelöscht", "info")
     return redirect(url_for('geraete_liste'))
 
-# ⚠️ Automatisch: alte Datenbank löschen und neu anlegen
+# ⚠️ Automatisch: alte Datenbank löschen und neu anlegen testerweiterung
 with app.app_context():
     db_path = "datenbank.db"
     db.drop_all()
