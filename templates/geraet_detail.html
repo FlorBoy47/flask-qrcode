@@ -40,6 +40,12 @@
   Sonstige Informationen: <br><textarea name="info_admin">{{ admin_notiz.info_admin or '' }}</textarea><br>
   <button type="submit">Speichern</button>
 </form>
+
+<!-- Löschen-Button für Admin -->
+<form method="POST" action="{{ url_for('geraet_loeschen', geraet_id=geraet.id) }}" onsubmit="return confirm('Gerät wirklich löschen?');">
+  <button type="submit" style="color: red;">Gerät löschen</button>
+</form>
+
 {% else %}
 <form method="POST">
   <input type="hidden" name="user_speichern" value="1">
