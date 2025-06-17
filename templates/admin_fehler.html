@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Gerätedetails – {{ geraet.name }}</title>
+  <title>Admin: Fehlerübersicht</title>
   <style>
     .fehler-offen {
       border: 2px solid red;
@@ -19,48 +19,34 @@
   </style>
 </head>
 <body>
-<h1>Gerät: {{ geraet.name }}</h1>
-<p><strong>Beschreibung:</strong> {{ geraet.beschreibung }}</p>
+<h1>Admin: Fehlerübersicht</h1>
 
-<hr>
-
-<h2>Acaris-Notizen</h2>
-{% for notiz in notizen %}
-<div>
-  <p><strong>Kunde:</strong> {{ notiz.kunde }}</p>
-  <p><strong>Probleme?</strong> {{ 'Ja' if notiz.probleme else 'Nein' }}</p>
-  {% if notiz.problembeschreibung %}
-  <p><strong>Beschreibung:</strong> {{ notiz.problembeschreibung }}</p>
-  {% endif %}
-  <p><strong>Weitere Infos:</strong> {{ notiz.info_user }}</p>
-</div>
-<hr>
-{% else %}
-<p>Keine Notizen vorhanden.</p>
-{% endfor %}
-
-<h2>Fehlerberichte</h2>
-{% for fehler in fehlerberichte %}
+{% for fehler in fehlerliste %}
 <div class="{% if fehler.erledigt %}fehler-erledigt{% else %}fehler-offen{% endif %}">
+  <p><strong>Gerät:</strong> {{ fehler.geraet.name }}</p>
   <p><strong>Gemeldet von:</strong> {{ fehler.user }}</p>
   <p><strong>Datum:</strong> {{ fehler.erstellt_am.strftime('%d.%m.%Y %H:%M') }}</p>
   <p><strong>Beschreibung:</strong> {{ fehler.beschreibung }}</p>
+
   {% if fehler.erledigt %}
   <p><strong>✅ Erledigt am:</strong> {{ fehler.erledigt_am.strftime('%d.%m.%Y %H:%M') }}</p>
   {% if fehler.kommentar_admin %}
   <p><strong>Admin-Kommentar:</strong> {{ fehler.kommentar_admin }}</p>
   {% endif %}
   {% else %}
-  <p><strong>Status:</strong> ❌ Offen</p>
+  <form method="POST">
+    <input type="hidden" name="fehler_id" value="{{ fehler.id }}">
+    <label for="kommentar">Kommentar zur Erledigung:</label><br>
+    <textarea name="kommentar" rows="3" cols="50"></textarea><br>
+    <button type="submit">✅ Als erledigt markieren</button>
+  </form>
   {% endif %}
 </div>
 {% else %}
-<p>Keine Fehler gemeldet.</p>
+<p>Keine Fehler vorhanden.</p>
 {% endfor %}
 
 <br>
-<a href="{{ url_for('fehler_melden', geraet_id=geraet.id) }}">🛠 Fehler melden</a>
-<br><br>
 <a href="{{ url_for('index') }}">🔙 Zurück zur Übersicht</a>
 </body>
 </html>

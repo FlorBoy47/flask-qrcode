@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Fehler melden</title>
+</head>
+<body>
+<h1>Fehler melden für Gerät: {{ geraet.name }}</h1>
+
+<form method="POST">
+  <label for="beschreibung">Problembeschreibung:</label><br>
+  <textarea id="beschreibung" name="beschreibung" rows="6" cols="50" required></textarea><br><br>
+
+  <button type="submit">Fehler melden</button>
+</form>
+
+<br>
+<a href="{{ url_for('geraet_details', geraet_id=geraet.id) }}">Zurück zur Geräteseite</a>
+</body>
+</html>
