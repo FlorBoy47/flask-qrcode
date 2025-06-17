@@ -1,12 +1,12 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session
 from functools import wraps
-from models import db, Geraet, Notiz, AdminNotiz
+from models import db, Geraet, Notiz
 import os
 
 app = Flask(__name__)
 app.secret_key = 'geheimer_schlüssel'
 
-# Datenbank-Konfiguration
+# DB-Konfiguration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///datenbank.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
@@ -26,6 +26,7 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# Nur Admin
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -40,16 +41,14 @@ def home():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    fehler = None
     if request.method == 'POST':
         name = request.form['username']
         pwd = request.form['password']
         if name in users and users[name] == pwd:
             session['username'] = name
             return redirect(url_for('geraete_liste'))
-        else:
-            fehler = "Falsche Zugangsdaten!"
-    return render_template('login.html', fehler=fehler)
+        return 'Falsche Zugangsdaten!'
+    return render_template('login.html')
 
 @app.route('/logout')
 def logout():
@@ -61,7 +60,7 @@ def logout():
 def geraete_liste():
     geraete = Geraet.query.all()
     alle_notizen = Notiz.query.all()
-    notizen_dict = {n.geraet_id: n for n in alle_notizen}
+    notizen_dict = {n.geraet_id: n for n in alle_notizen if n.user == 'Acaris'}
     return render_template('geraete.html', geraete=geraete, user=session['username'], notizen=notizen_dict)
 
 @app.route('/geraet/<int:geraet_id>', methods=['GET', 'POST'])
@@ -69,28 +68,10 @@ def geraete_liste():
 def geraet_detail(geraet_id):
     user = session['username']
     geraet = Geraet.query.get_or_404(geraet_id)
-    notiz = Notiz.query.filter_by(user='Acaris', geraet_id=geraet.id).first()
-    admin_notiz = AdminNotiz.query.filter_by(geraet_id=geraet.id).first()
+    notiz = Notiz.query.filter_by(user=user, geraet_id=geraet.id).first()
 
     if request.method == 'POST':
-        if user == 'Admin' and 'admin_speichern' in request.form:
-            if not admin_notiz:
-                admin_notiz = AdminNotiz(geraet_id=geraet.id)
-                db.session.add(admin_notiz)
-
-            admin_notiz.geliefert_am = request.form.get("geliefert_am")
-            admin_notiz.info_problem_admin = request.form.get("info_problem_admin")
-            admin_notiz.info_admin = request.form.get("info_admin")
-
-            if notiz:
-                notiz.problem_behoben = 'problem_behoben' in request.form
-                notiz.problem_loesung = request.form.get("problem_loesung")
-
-            db.session.commit()
-            flash("Änderungen gespeichert", "success")
-            return redirect(url_for('geraet_detail', geraet_id=geraet.id))
-
-        elif user != 'Admin' and 'user_speichern' in request.form:
+        if user == "Acaris":
             kunde = request.form.get('kunde')
             probleme = bool(request.form.get('probleme'))
             problembeschreibung = request.form.get('problembeschreibung')
@@ -101,8 +82,8 @@ def geraet_detail(geraet_id):
                 notiz.probleme = probleme
                 notiz.problembeschreibung = problembeschreibung
                 notiz.info_user = info_user
-                notiz.problem_behoben = False
-                notiz.problem_loesung = None
+                notiz.problem_behoben = False  # Zurücksetzen, wenn Acaris was meldet
+                notiz.loesung_kommentar = ""
             else:
                 notiz = Notiz(
                     user=user,
@@ -110,43 +91,46 @@ def geraet_detail(geraet_id):
                     kunde=kunde,
                     probleme=probleme,
                     problembeschreibung=problembeschreibung,
-                    info_user=info_user,
-                    problem_behoben=False,
-                    problem_loesung=None
+                    info_user=info_user
                 )
                 db.session.add(notiz)
-
             db.session.commit()
             return redirect(url_for('geraet_detail', geraet_id=geraet.id))
 
-    return render_template("geraet_detail.html", geraet=geraet, notiz=notiz, admin_notiz=admin_notiz, user=user)
+        elif user == "Admin":
+            notiz = Notiz.query.filter_by(user='Acaris', geraet_id=geraet.id).first()
+            if notiz:
+                notiz.problem_behoben = 'problem_behoben' in request.form
+                notiz.loesung_kommentar = request.form.get("loesung_kommentar", "")
+                db.session.commit()
+            return redirect(url_for('geraet_detail', geraet_id=geraet.id))
+
+    return render_template('geraet_detail.html', geraet=geraet, notiz=notiz, user=user)
 
 @app.route('/geraet/neu', methods=['GET', 'POST'])
 @admin_required
 def geraet_erstellen():
-    if request.method == "POST":
-        name = request.form["name"]
-        beschreibung = request.form["beschreibung"]
-        neues_geraet = Geraet(name=name, beschreibung=beschreibung)
+    if request.method == 'POST':
+        name = request.form['name']
+        neues_geraet = Geraet(name=name)
         db.session.add(neues_geraet)
         db.session.commit()
-        return redirect(url_for("geraete_liste"))
-    return render_template("geraet_erstellen.html")
+        return redirect(url_for('geraete_liste'))
+    return render_template('geraet_erstellen.html')
 
 @app.route('/geraet/<int:geraet_id>/loeschen', methods=['POST'])
 @admin_required
 def geraet_loeschen(geraet_id):
     geraet = Geraet.query.get_or_404(geraet_id)
     Notiz.query.filter_by(geraet_id=geraet.id).delete()
-    AdminNotiz.query.filter_by(geraet_id=geraet.id).delete()
     db.session.delete(geraet)
     db.session.commit()
     return redirect(url_for('geraete_liste'))
 
-# 🛠 Automatisch Datenbank erstellen (nur lokal sinnvoll!)
+# DB einmalig initialisieren
 with app.app_context():
     db.create_all()
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 10000))
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
