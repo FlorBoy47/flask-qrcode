@@ -1,25 +1,67 @@
-{% extends "layout.html" %}
-{% block content %}
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Geräteübersicht</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 30px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            text-align: center;
+        }
+        .geraet-liste {
+            max-width: 800px;
+            margin: auto;
+        }
+        .geraet {
+            background-color: white;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 5px gray;
+        }
+        .geraet a {
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            max-width: 800px;
+            margin: auto;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="top-bar">
+    <div>
+        Eingeloggt als: {{ user }}
+    </div>
+    <div>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</div>
+
 <h1>Geräteübersicht</h1>
-<a href="{{ url_for('geraet_erstellen') }}">Neues Gerät erstellen</a>
-<table border="1">
-    <tr>
-        <th>Name</th>
-        <th>Aktionen</th>
-    </tr>
+
+{% if user == 'admin' %}
+<div style="text-align:center; margin-bottom: 20px;">
+    <a href="{{ url_for('geraet_erstellen') }}">Neues Gerät hinzufügen</a> |
+    <a href="{{ url_for('admin_fehler') }}">Fehlerübersicht</a>
+</div>
+{% endif %}
+
+<div class="geraet-liste">
     {% for geraet in geraete %}
-    {% set notiz = notizen.get(geraet.id) %}
-    <tr {% if notiz and notiz.probleme %} style="background-color: {% if notiz.problem_behoben %}#ffffcc{% else %}#ffcccc{% endif %};" {% endif %}>
-        <td>{{ geraet.name }}</td>
-        <td>
-            <a href="{{ url_for('geraet_detail', geraet_id=geraet.id) }}">Details</a>
-            {% if user == 'Admin' %}
-            <form method="POST" action="{{ url_for('geraet_loeschen', geraet_id=geraet.id) }}" style="display:inline">
-                <button type="submit" onclick="return confirm('Wirklich löschen?')">Löschen</button>
-            </form>
-            {% endif %}
-        </td>
-    </tr>
+    <div class="geraet">
+        <a href="{{ url_for('geraet_details', geraet_id=geraet.id) }}">{{ geraet.name }}</a><br>
+        {{ geraet.beschreibung }}
+    </div>
     {% endfor %}
-</table>
-{% endblock %}
+</div>
+</body>
+</html>

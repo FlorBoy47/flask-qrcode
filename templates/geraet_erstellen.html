@@ -1,17 +1,62 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Gerät erstellen</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 30px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 700px;
+            margin: auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 5px gray;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
 <body>
-<h2>Neues Gerät anlegen</h2>
-<form method="POST">
-    Gerätename: <input type="text" name="name"><br>
-    Beschreibung: <br>
-    <textarea name="beschreibung" rows="4" cols="50"></textarea><br>
-    <button type="submit">Erstellen</button>
-</form>
+<div class="container">
+    <div class="top-bar">
+        <div>Eingeloggt als: Admin</div>
+        <div><a href="{{ url_for('logout') }}">Logout</a></div>
+    </div>
 
-<br>
-<a href="{{ url_for('geraete_liste') }}">Zurück zur Übersicht</a>
-<br>
-<a href="{{ url_for('logout') }}">Logout</a>
+    <h1>Neues Gerät erstellen</h1>
+    <form method="POST">
+        <label for="name">Name des Geräts:</label><br>
+        <input type="text" id="name" name="name" required><br>
+
+        <label for="beschreibung">Beschreibung:</label><br>
+        <textarea id="beschreibung" name="beschreibung"></textarea><br>
+
+        <button type="submit">Erstellen</button>
+    </form>
+
+    <br>
+    <a href="{{ url_for('index') }}">Zurück zur Übersicht</a>
+</div>
 </body>
 </html>

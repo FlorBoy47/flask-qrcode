@@ -1,19 +1,58 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
+  <meta charset="UTF-8">
   <title>Fehler melden</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      background-color: #f4f4f4;
+    }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 5px gray;
+    }
+    textarea {
+      width: 100%;
+      height: 150px;
+    }
+    button {
+      padding: 10px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      margin-top: 15px;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+    }
+  </style>
 </head>
 <body>
-<h1>Fehler melden für Gerät: {{ geraet.name }}</h1>
+<div class="container">
+  <div class="top-bar">
+    <div>Eingeloggt als: Acaris</div>
+    <div><a href="{{ url_for('logout') }}">Logout</a></div>
+  </div>
 
-<form method="POST">
-  <label for="beschreibung">Problembeschreibung:</label><br>
-  <textarea id="beschreibung" name="beschreibung" rows="6" cols="50" required></textarea><br><br>
+  <h1>Fehler für Gerät "{{ geraet.name }}" melden</h1>
 
-  <button type="submit">Fehler melden</button>
-</form>
+  <form method="POST">
+    <label for="beschreibung">Beschreibung des Fehlers:</label><br>
+    <textarea name="beschreibung" required></textarea><br>
+    <button type="submit">Fehler melden</button>
+  </form>
 
-<br>
-<a href="{{ url_for('geraet_details', geraet_id=geraet.id) }}">Zurück zur Geräteseite</a>
+  <br>
+  <a href="{{ url_for('geraet_details', geraet_id=geraet.id) }}">Zurück zu den Gerätedetails</a>
+</div>
 </body>
 </html>
