@@ -67,7 +67,7 @@ def geraet_details(geraet_id):
     notizen = Notiz.query.filter_by(geraet_id=geraet.id).all()
     admin_notiz = AdminNotiz.query.filter_by(geraet_id=geraet.id).first()
     fehlerberichte = Fehlerbericht.query.filter_by(geraet_id=geraet.id).order_by(Fehlerbericht.erstellt_am.desc()).all()
-    return render_template('geraet_details.html', geraet=geraet, notizen=notizen, admin_notiz=admin_notiz, fehlerberichte=fehlerberichte, user=session['user'])
+    return render_template('geraet_detail.html', geraet=geraet, notizen=notizen, admin_notiz=admin_notiz, fehlerberichte=fehlerberichte, user=session['user'])
 
 # Fehler melden (Acaris)
 @app.route('/fehler-melden/<int:geraet_id>', methods=['GET', 'POST'])
