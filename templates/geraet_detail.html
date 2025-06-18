@@ -63,6 +63,17 @@
     {% endfor %}
     <a class="button" href="{{ url_for('fehler_melden', geraet_id=geraet.id) }}">Fehler melden</a>
   </div>
+
+  <form method="POST" action="{{ url_for('notiz_hinzufuegen', geraet_id=geraet.id) }}">
+    <label for="kunde"><strong>Kunde:</strong></label><br>
+    <input type="text" id="kunde" name="kunde" required><br><br>
+
+    <label for="kommentar"><strong>Sonstige Informationen:</strong></label><br>
+    <textarea id="kommentar" name="kommentar" rows="4" cols="50" required></textarea><br><br>
+
+    <button type="submit">Notiz speichern</button>
+  </form>
+
   {% endif %}
 
   {% if user == 'admin' and admin_notiz %}
