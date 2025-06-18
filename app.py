@@ -8,6 +8,15 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///datenbank.db'
 app.secret_key = 'dein_geheimer_schluessel'
 db.init_app(app)
 
+import os
+
+@app.before_first_request
+def reset_database():
+    db_path = 'datenbank.db'
+    if os.path.exists(db_path):
+        os.remove(db_path)
+    db.create_all()
+
 # Dummy-Login-Daten
 users = {
     "admin": "adminpass",
