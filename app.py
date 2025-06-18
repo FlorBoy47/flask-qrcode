@@ -76,21 +76,31 @@ def fehler_melden(geraet_id):
 def admin_fehler():
     if 'user' not in session or session['user'] != 'admin':
         return redirect(url_for('login'))
+
     fehlerliste = Fehlerbericht.query.order_by(Fehlerbericht.erstellt_am.desc()).all()
+
     if request.method == 'POST':
         fehler_id = request.form.get('fehler_id')
         kommentar = request.form.get('kommentar')
         status = request.form.get('status')
+
         fehler = Fehlerbericht.query.get_or_404(fehler_id)
         fehler.status = status
         fehler.kommentar_admin = kommentar
+
         if status == "Erledigt":
             fehler.erledigt = True
             fehler.erledigt_am = datetime.utcnow()
+        else:
+            fehler.erledigt = False
+            fehler.erledigt_am = None
+
         db.session.commit()
         flash("Fehlerstatus aktualisiert.", "success")
         return redirect(url_for('admin_fehler'))
+
     return render_template('admin_fehler.html', fehlerliste=fehlerliste)
+
 
 @app.route('/geraet-erstellen', methods=['GET', 'POST'])
 def geraet_erstellen():
