@@ -1,100 +1,43 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-  <meta charset="UTF-8">
-  <title>Gerätedetails</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 30px;
-      background-color: #f5f5f5;
-    }
-    .container {
-      max-width: 800px;
-      margin: auto;
-    }
-    .section {
-      background-color: white;
-      padding: 20px;
-      margin-bottom: 20px;
-      border-radius: 8px;
-      box-shadow: 0 0 5px gray;
-    }
-    h1, h2 {
-      text-align: center;
-    }
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 30px;
-    }
-    .button {
-      display: inline-block;
-      margin: 10px 0;
-    }
-    .info {
-      white-space: pre-wrap;
-    }
-  </style>
-</head>
-<body>
-<div class="container">
-  <div class="top-bar">
-    <div>Eingeloggt als: {{ user }}</div>
-    <div><a href="{{ url_for('logout') }}">Logout</a></div>
-  </div>
+<div class="section">
+  <h2>Fehlerberichte</h2>
+  {% for fehler in fehlerberichte %}
+  <div class="info">
+    <strong>Von:</strong> {{ fehler.user }}<br>
+    <strong>Am:</strong> {{ fehler.erstellt_am.strftime('%d.%m.%Y %H:%M') }}<br>
+    <strong>Beschreibung:</strong> {{ fehler.beschreibung }}<br>
 
-  <div class="section">
-    <h1>{{ geraet.name }}</h1>
-    <p>{{ geraet.beschreibung }}</p>
-  </div>
+    {% if user == 'admin' %}
+    <form action="{{ url_for('admin_fehler') }}" method="post" style="margin-top: 10px;">
+      <input type="hidden" name="fehler_id" value="{{ fehler.id }}">
 
-  {% if user == 'acaris' %}
-  <div class="section">
-    <h2>Notizen zu diesem Gerät</h2>
-    {% for notiz in notizen %}
-    <div class="info">
-      <strong>{{ notiz.kunde }}</strong><br>
-      {% if notiz.problem %}🛑 <strong>Problem:</strong> {{ notiz.problembeschreibung }}<br>{% endif %}
-      <strong>Sonstiges:</strong> {{ notiz.sonstige_infos }}<br><br>
-    </div>
+      <label for="status"><strong>Status:</strong></label>
+      <select name="status">
+        <option value="Offen" {% if fehler.status == 'Offen' %}selected{% endif %}>Offen</option>
+        <option value="In Bearbeitung" {% if fehler.status == 'In Bearbeitung' %}selected{% endif %}>In Bearbeitung</option>
+        <option value="Erledigt" {% if fehler.status == 'Erledigt' %}selected{% endif %}>Erledigt</option>
+      </select><br><br>
+
+      <label for="kommentar"><strong>Kommentar:</strong></label><br>
+      <textarea name="kommentar" rows="2" cols="40">{{ fehler.kommentar_admin or '' }}</textarea><br><br>
+
+      <button type="submit">Status ändern</button>
+    </form>
+
+    {% if fehler.erledigt %}
+    <strong>Erledigt am:</strong> {{ fehler.erledigt_am.strftime('%d.%m.%Y %H:%M') }}<br>
+    {% endif %}
     {% else %}
-    <p>Keine Notizen vorhanden.</p>
-    {% endfor %}
-    <a class="button" href="{{ url_for('fehler_melden', geraet_id=geraet.id) }}">Fehler melden</a>
-  </div>
-  {% endif %}
-
-  {% if user == 'admin' and admin_notiz %}
-  <div class="section">
-    <h2>Admin-Notiz</h2>
-    <p><strong>Geliefert am:</strong> {{ admin_notiz.geliefert_am }}</p>
-    <p><strong>Infos zu Problemen:</strong> {{ admin_notiz.infos_zu_problemen }}</p>
-    <p><strong>Sonstige Infos:</strong> {{ admin_notiz.sonstige_infos }}</p>
-  </div>
-  {% endif %}
-
-  <div class="section">
-    <h2>Fehlerberichte</h2>
-    {% for fehler in fehlerberichte %}
-    <div class="info">
-      <strong>Von:</strong> {{ fehler.user }}<br>
-      <strong>Am:</strong> {{ fehler.erstellt_am.strftime('%d.%m.%Y %H:%M') }}<br>
-      <strong>Beschreibung:</strong> {{ fehler.beschreibung }}<br>
-      {% if fehler.erledigt %}
-      <strong>Erledigt am:</strong> {{ fehler.erledigt_am.strftime('%d.%m.%Y %H:%M') }}<br>
-      <strong>Kommentar:</strong> {{ fehler.kommentar_admin }}
-      {% else %}
-      <strong>Status:</strong> Offen
-      {% endif %}
-      <hr>
-    </div>
+    {% if fehler.erledigt %}
+    <strong>Erledigt am:</strong> {{ fehler.erledigt_am.strftime('%d.%m.%Y %H:%M') }}<br>
+    <strong>Kommentar:</strong> {{ fehler.kommentar_admin }}
     {% else %}
-    <p>Keine Fehler gemeldet.</p>
-    {% endfor %}
-  </div>
+    <strong>Status:</strong> {{ fehler.status }}
+    {% endif %}
+    {% endif %}
 
-  <a href="{{ url_for('index') }}">Zurück zur Übersicht</a>
+    <hr>
+  </div>
+  {% else %}
+  <p>Keine Fehler gemeldet.</p>
+  {% endfor %}
 </div>
-</body>
-</html>
