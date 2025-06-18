@@ -30,3 +30,5 @@ class Fehlerbericht(db.Model):
     erledigt_am = db.Column(db.DateTime, nullable=True)
     status = db.Column(db.String(50), default="Offen")  # "Offen", "In Bearbeitung", "Erledigt"
     erledigt = db.Column(db.Boolean, default=False)
+
+    geraet = db.relationship('Geraet', backref='fehlerberichte')
