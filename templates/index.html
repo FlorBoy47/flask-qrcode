@@ -58,7 +58,7 @@
 <div class="geraet-liste">
     {% for geraet in geraete %}
     <div class="geraet">
-        <a href="{{ url_for('geraet_details', geraet_id=geraet.id) }}">{{ geraet.name }}</a><br>
+        <a href="{{ url_for('geraet_detail', geraet_id=geraet.id) }}">{{ geraet.name }}</a><br>
         {{ geraet.beschreibung }}
     </div>
     {% endfor %}
