@@ -10,12 +10,16 @@ db.init_app(app)
 
 import os
 
-@app.before_first_request
-def reset_database():
-    db_path = 'datenbank.db'
-    if os.path.exists(db_path):
-        os.remove(db_path)
-    db.create_all()
+if __name__ == '__main__':
+    with app.app_context():
+        db_path = os.path.join(app.instance_path, 'datenbank.db')
+        os.makedirs(app.instance_path, exist_ok=True)
+        if os.path.exists(db_path):
+            os.remove(db_path)
+        db.create_all()
+    app.run(debug=True)
+
+
 
 # Dummy-Login-Daten
 users = {
@@ -128,6 +132,6 @@ def geraet_erstellen():
     return render_template('geraet_erstellen.html')
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
+   # with app.app_context():
+    #    db.create_all()
     app.run(debug=True)
