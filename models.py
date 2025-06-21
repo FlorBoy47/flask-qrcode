@@ -11,8 +11,9 @@ class Geraet(db.Model):
 class Notiz(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     geraet_id = db.Column(db.Integer, db.ForeignKey('geraet.id'), nullable=False)
-    inhalt = db.Column(db.Text, nullable=False)
-    erstellt_am = db.Column(db.DateTime, default=datetime.utcnow)
+    kunde = db.Column(db.String(100))  # Dieses Feld fehlte!
+    sonstige_infos = db.Column(db.Text)
+
 
 class AdminNotiz(db.Model):
     id = db.Column(db.Integer, primary_key=True)
